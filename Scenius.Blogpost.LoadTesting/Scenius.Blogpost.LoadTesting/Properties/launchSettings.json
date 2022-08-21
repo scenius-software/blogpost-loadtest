@@ -1,0 +1,11 @@
+﻿{
+  "profiles": {
+    "Scenius.Blogpost.LoadTesting": {
+      "commandName": "Project",
+      "dotnetRunMessages": true,
+      "environmentVariables": {
+        "ASPNETCORE_ENVIRONMENT": "Development"
+      }
+    }
+  }
+}
