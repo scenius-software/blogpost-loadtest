@@ -1,0 +1,58 @@
+version: '3.8'
+services:
+  db:
+    image: 'postgres:14-alpine'
+    ports:
+      - '5432:5432'
+    environment:
+      POSTGRES_USER: blogpost
+      POSTGRES_PASSWORD: blogpost
+      POSTGRES_DB: blogpost
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - pg_isready -U postgres
+      interval: 30s
+      timeout: 30s
+      retries: 3
+  elastic:
+    image: 'docker.elastic.co/elasticsearch/elasticsearch:7.15.2'
+    environment:
+      - discovery.type=single-node
+      - bootstrap.memory_lock=true
+      - ES_JAVA_OPTS=-Xms512m -Xmx512m
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+    ports:
+      - '9200:9200'
+  elastic_apm:
+    image: 'docker.elastic.co/apm/apm-server:7.15.2'
+    user: apm-server
+    command: >
+      apm-server -e -E apm-server.rum.enabled=true -E setup.kibana.host=kibana:5601 -E setup.template.settings.index.number_of_replicas=0 -E apm-server.kibana.enabled=true -E apm-server.kibana.host=kibana:5601 -E
+      output.elasticsearch.hosts=["elastic:9200"] -E strict.perms=false -E output.elasticsearch.enabled=true -E output.elasticsearch.username=elastic -E output.elasticsearch.password=elastic -E apm-server.kibana.username=elastic -E
+      apm-server.kibana.password=elastic
+    cap_add:
+      - CHOWN
+      - DAC_OVERRIDE
+      - SETGID
+      - SETUID
+    cap_drop:
+      - ALL
+    ports:
+      - '8200:8200'
+    healthcheck:
+      interval: 10s
+      retries: 12
+      test: 'curl --write-out ''HTTP %{http_code}'' --fail --silent --output /dev/null http://localhost:8200'
+  kibana:
+    image: 'docker.elastic.co/kibana/kibana:7.15.2'
+    ports:
+      - '5601:5601'
+    environment:
+      ELASTICSEARCH_HOSTS: 'http://elastic:9200'
+      ELASTICSEARCH_USERNAME: elastic
+      ELASTICSEARCH_PASSWORD: elastic
+      
